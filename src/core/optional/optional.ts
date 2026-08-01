@@ -1,26 +1,26 @@
-type OptionalValue<T> = T | null | undefined;
+type OptionalValue<T> = T | null | undefined
 
 export class Optional<T> {
   constructor(private readonly value: OptionalValue<T>) {
-    this.value = value;
+    this.value = value
   }
 
   static of<T>(value: OptionalValue<T>): Optional<T> {
-    return new Optional(value);
+    return new Optional(value)
   }
 
   isPresent(): boolean {
-    return this.value !== null && this.value !== undefined;
+    return this.value !== null && this.value !== undefined
   }
 
   get(): T {
     if (this.value === null || this.value === undefined) {
-      throw new Error('No value present');
+      throw new Error('No value present')
     }
-    return this.value;
+    return this.value
   }
 
   orElse(other: T): T {
-    return this.isPresent() ? this.get() : other;
+    return this.isPresent() ? this.get() : other
   }
 }
