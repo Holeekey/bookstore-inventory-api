@@ -10,7 +10,7 @@ export class CreateBookInput {
   @IsString()
   isbn: string
 
-  @IsNumber()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   costUsd: number
 
