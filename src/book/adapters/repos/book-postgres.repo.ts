@@ -30,6 +30,15 @@ export class BookPostgresRepo implements BookRepo {
     }
   }
 
+  async deleteById(id: number): Promise<Result<{ id: number }>> {
+    try {
+      await this.prisma.book.delete({ where: { id } })
+      return Result.success({ id })
+    } catch (error) {
+      return this.handleWriteError(error)
+    }
+  }
+
   async findByIsbn(isbn: string): Promise<Optional<Book>> {
     const row = await this.prisma.book.findUnique({ where: { isbn } })
     return Optional.of(row ? this.toEntity(row) : null)
@@ -53,7 +62,7 @@ export class BookPostgresRepo implements BookRepo {
     return await this.prisma.book.count()
   }
 
-  private handleWriteError(error: unknown): Result<Book> {
+  private handleWriteError<T>(error: unknown): Result<T> {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       // `isbn` is the only unique constraint on the table, so any unique
       // violation here means another book already owns that ISBN.

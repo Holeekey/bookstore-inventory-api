@@ -5,6 +5,8 @@ import { BOOK_REPO } from './ports/book.repo'
 import { BookPostgresRepo } from './adapters/repos/book-postgres.repo'
 import { FindOneBookService } from './services/find-one/find-one-book.service'
 import { FindManyBooksService } from './services/find-many/find-many-books.service'
+import { UpdateBookService } from './services/update/update-book.service'
+import { DeleteBookService } from './services/delete/delete-book.service'
 
 @Module({
   controllers: [BookController],
@@ -13,6 +15,8 @@ import { FindManyBooksService } from './services/find-many/find-many-books.servi
     CreateBookService,
     FindOneBookService,
     FindManyBooksService,
+    UpdateBookService,
+    DeleteBookService,
   ],
 })
 export class BookModule {}

@@ -1,5 +1,6 @@
 import { Book } from 'src/book/entities/book'
 import { BookRepo } from 'src/book/ports/book.repo'
+import { BookNotFoundException } from 'src/book/exceptions/book-not-found.exception'
 import { Optional } from 'src/core/optional/optional'
 import { Result } from 'src/core/result/result'
 
@@ -15,6 +16,15 @@ export class BookMockRepo implements BookRepo {
     book.id = this.books.length + 1
     this.books.push(book)
     return Promise.resolve(Result.success(book))
+  }
+
+  deleteById(id: number): Promise<Result<{ id: number }>> {
+    const index = this.books.findIndex((b) => b.id === id)
+    if (index < 0) {
+      return Promise.resolve(Result.failure(new BookNotFoundException()))
+    }
+    this.books.splice(index, 1)
+    return Promise.resolve(Result.success({ id }))
   }
 
   findByIsbn(isbn: string): Promise<Optional<Book>> {

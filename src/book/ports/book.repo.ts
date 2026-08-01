@@ -4,6 +4,7 @@ import { Result } from 'src/core/result/result'
 
 export interface BookRepo {
   save(book: Book): Promise<Result<Book>>
+  deleteById(id: number): Promise<Result<{ id: number }>>
   findByIsbn(isbn: string): Promise<Optional<Book>>
   findById(id: number): Promise<Optional<Book>>
   findMany(data: { page: number; limit: number }): Promise<Book[]>
