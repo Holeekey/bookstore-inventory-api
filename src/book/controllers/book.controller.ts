@@ -24,6 +24,7 @@ import { FindLowStockBooksService } from '../services/low-stock/find-low-stock-b
 import { FindLowStockBooksInput } from '../services/low-stock/types/input'
 import { CalculateBookPriceService } from '../services/calculate-price/calculate-book-price.service'
 import { CalculateBookPriceInput } from '../services/calculate-price/types/input'
+import { SeedBooksService } from '../services/seed/seed-books.service'
 
 @Controller('books')
 export class BookController {
@@ -36,11 +37,18 @@ export class BookController {
     private searchBooksByCategory: SearchBooksByCategoryService,
     private findLowStockBooks: FindLowStockBooksService,
     private calculateBookPrice: CalculateBookPriceService,
+    private seedBooks: SeedBooksService,
   ) {}
 
   @Post()
   async create(@Body() body: CreateBookInput) {
     return await this.createBook.execute(body)
+  }
+
+  // Public convenience endpoint: loads the demo catalogue, no body, no params.
+  @Post('seed')
+  async seed() {
+    return await this.seedBooks.execute()
   }
 
   @Get()

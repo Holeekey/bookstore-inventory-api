@@ -152,6 +152,80 @@
           ]
         },
         {
+          "name": "Seed catalog",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books/seed",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "books",
+                "seed"
+              ]
+            },
+            "description": "Carga un catálogo de demostración de 50 libros en el inventario. Endpoint público: no recibe body ni parámetros.\n\nLos libros se cargan con `sellingPriceLocal` en `null`, con variedad de categorías, países de origen y niveles de stock (varios por debajo de 10, útiles para `GET /books/low-stock`).\n\nEs idempotente: los libros cuyo ISBN ya está cargado se omiten en lugar de fallar, así que puede llamarse varias veces sin duplicar el catálogo.\n\n**Respuestas**\n- `201 Created`: `{ requested, created, skipped }` — libros del catálogo, insertados y omitidos por ISBN ya existente."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/books/seed",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "books",
+                    "seed"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"requested\": 50,\n  \"created\": 50,\n  \"skipped\": 0\n}"
+            },
+            {
+              "name": "201 Catálogo ya cargado",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/books/seed",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "books",
+                    "seed"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"requested\": 50,\n  \"created\": 0,\n  \"skipped\": 50\n}"
+            }
+          ]
+        },
+        {
           "name": "Find many books",
           "request": {
             "method": "GET",

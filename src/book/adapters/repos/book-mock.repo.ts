@@ -18,6 +18,19 @@ export class BookMockRepo implements BookRepo {
     return Promise.resolve(Result.success(book))
   }
 
+  saveMany(books: Book[]): Promise<Result<{ created: number }>> {
+    let created = 0
+
+    for (const book of books) {
+      if (this.books.some((b) => b.isbn === book.isbn)) continue
+      book.id = this.books.length + 1
+      this.books.push(book)
+      created++
+    }
+
+    return Promise.resolve(Result.success({ created }))
+  }
+
   deleteById(id: number): Promise<Result<{ id: number }>> {
     const index = this.books.findIndex((b) => b.id === id)
     if (index < 0) {

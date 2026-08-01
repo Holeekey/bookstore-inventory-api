@@ -30,6 +30,19 @@ export class BookPostgresRepo implements BookRepo {
     }
   }
 
+  async saveMany(books: Book[]): Promise<Result<{ created: number }>> {
+    try {
+      const { count } = await this.prisma.book.createMany({
+        data: books.map((book) => this.toRow(book)),
+        skipDuplicates: true,
+      })
+
+      return Result.success({ created: count })
+    } catch (error) {
+      return this.handleWriteError(error)
+    }
+  }
+
   async deleteById(id: number): Promise<Result<{ id: number }>> {
     try {
       await this.prisma.book.delete({ where: { id } })
