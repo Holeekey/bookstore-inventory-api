@@ -1,98 +1,434 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Bookstore Inventory API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API REST para gestionar el inventario de una cadena de librerías: CRUD de libros,
+búsquedas y cálculo del precio de venta sugerido a partir de una tasa de cambio
+externa.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Stack: **NestJS 11** + **TypeScript 5.7** + **Prisma 7** + **PostgreSQL 16**,
+con arquitectura hexagonal por módulo de dominio.
 
-## Description
+- Colección Postman: [postman/bookstore-inventory-api.postman_collection.json](postman/bookstore-inventory-api.postman_collection.json)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## Requisitos previos
+
+| Requisito      | Versión            | Notas                                                               |
+| -------------- | ------------------ | ------------------------------------------------------------------- |
+| **Node.js**    | 22 LTS (mínimo 20) | NestJS 11 requiere Node ≥ 20. La imagen Docker usa `node:22-alpine` |
+| **npm**        | 10+                | Incluido con Node 22                                                |
+| **Docker**     | 24+ con Compose v2 | Solo para levantar PostgreSQL (o la API completa)                   |
+| **PostgreSQL** | 16                 | Únicamente si prefieres no usar Docker                              |
+
+Comprueba tu entorno:
 
 ```bash
-$ npm install
+node -v      # v22.x
+npm -v       # 10.x
+docker --version
 ```
 
-## Compile and run the project
+**Conexión a internet**: el cálculo de precio consulta
+`https://api.exchangerate-api.com/v4/latest/USD`. No es obligatoria — si la API
+falla o tarda más de 5 s, el sistema aplica una tasa por defecto y el endpoint
+sigue funcionando.
+
+---
+
+## Instalación y ejecución
+
+### 1. Clonar e instalar dependencias
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+git clone <url-del-repositorio>
+cd bookstore-inventory-api
+npm install
 ```
 
-## Run tests
+> `npm install` ejecuta `prisma generate` en el `postinstall`, que genera el
+> cliente de Prisma en `src/generated/prisma` (carpeta ignorada por git).
+
+### 2. Configurar las variables de entorno
+
+Copia el ejemplo y ajústalo si hace falta:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cp .env.example .env          # bash / git-bash / macOS / Linux
+Copy-Item .env.example .env   # PowerShell
 ```
 
-## Deployment
+| Variable            | Valor por defecto  | Para qué sirve                              |
+| ------------------- | ------------------ | ------------------------------------------- |
+| `PORT`              | `3000`             | Puerto donde escucha la API                 |
+| `POSTGRES_USER`     | `admin`            | Usuario del contenedor de Postgres          |
+| `POSTGRES_PASSWORD` | `admin`            | Contraseña del contenedor de Postgres       |
+| `POSTGRES_DB`       | `bookstore`        | Nombre de la base de datos                  |
+| `POSTGRES_PORT`     | `5432`             | Puerto del **host** mapeado al contenedor   |
+| `DATABASE_URL`      | ver `.env.example` | Cadena de conexión que usan Prisma y la API |
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+> ⚠️ Si cambias cualquier `POSTGRES_*`, actualiza también `DATABASE_URL` a mano:
+> son dos valores independientes y Prisma solo lee `DATABASE_URL`.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Los valores por defecto ya son coherentes entre sí, así que basta con copiar el
+archivo para empezar.
+
+### Opción A — Todo con Docker (la más rápida)
+
+Levanta PostgreSQL y la API en un solo comando. El contenedor de la API aplica
+las migraciones pendientes (`prisma migrate deploy`) antes de arrancar:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+docker compose up -d --build
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+La API queda disponible en `http://localhost:3000`. Para ver los logs o parar:
 
-## Resources
+```bash
+docker compose logs -f api
+docker compose down            # añade -v para borrar también los datos
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+### Opción B — Postgres en Docker, API en local (recomendada para desarrollar)
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+# 1. Solo la base de datos
+docker compose up -d postgres
 
-## Support
+# 2. Crear el esquema (primera vez o tras cambiar prisma/schema.prisma)
+npm run prisma:migrate
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# 3. Arrancar en modo watch
+npm run start:dev
+```
 
-## Stay in touch
+En la opción B, `DATABASE_URL` debe apuntar a `localhost` (como en
+`.env.example`); en la opción A, Docker Compose inyecta automáticamente la
+variable apuntando al host interno `postgres:5432`.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### 3. Verificar que funciona
 
-## License
+```bash
+curl http://localhost:3000/books
+# {"books":[],"total":0,"page":1,"limit":10}
+```
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+> No existe una ruta raíz: `GET /` responde `404`. Empieza por `/books`.
+
+Para trabajar con datos desde el primer momento, carga el catálogo de
+demostración (50 libros, idempotente):
+
+```bash
+curl -X POST http://localhost:3000/books/seed
+# {"requested":50,"created":50,"skipped":0}
+```
+
+### Producción sin Docker
+
+```bash
+npm run build
+npm run prisma:deploy    # aplica migraciones sin generar nuevas
+npm run start:prod
+```
+
+---
+
+## Scripts disponibles
+
+| Comando                   | Qué hace                                   |
+| ------------------------- | ------------------------------------------ |
+| `npm run start:dev`       | Servidor en modo watch (`PORT` o 3000)     |
+| `npm run start:prod`      | Ejecuta el build de `dist/main.js`         |
+| `npm run build`           | Compila a `dist/`                          |
+| `npm test`                | Tests unitarios (Jest)                     |
+| `npm run test:cov`        | Tests con reporte de cobertura             |
+| `npm run test:e2e`        | Tests end-to-end                           |
+| `npm run lint`            | ESLint con `--fix`                         |
+| `npm run format`          | Prettier sobre `src/` y `test/`            |
+| `npm run prisma:migrate`  | Crea y aplica una migración (desarrollo)   |
+| `npm run prisma:deploy`   | Aplica migraciones pendientes (producción) |
+| `npm run prisma:generate` | Regenera el cliente de Prisma              |
+| `npm run prisma:studio`   | Abre Prisma Studio para explorar los datos |
+
+Los tests unitarios (`npm test`) no necesitan base de datos: usan el doble en
+memoria `BookMockRepo` y providers fijos de fecha y tasa de cambio.
+
+---
+
+## Modelo de datos
+
+El API expone **camelCase** (el documento de requisitos usa `snake_case`):
+
+```json
+{
+  "id": 1,
+  "title": "The Pragmatic Programmer",
+  "author": "David Thomas",
+  "isbn": "978-0135957059",
+  "costUsd": 34.99,
+  "sellingPriceLocal": null,
+  "stockQuantity": 12,
+  "category": "Software Engineering",
+  "supplierCountry": "US",
+  "createdAt": "2026-08-01T12:00:00.000Z",
+  "updatedAt": "2026-08-01T12:00:00.000Z"
+}
+```
+
+`sellingPriceLocal` nace como `null` y se rellena al llamar a
+`POST /books/{id}/calculate-price`.
+
+## Formato de las respuestas
+
+- **Éxito**: se devuelve el valor del caso de uso **sin envoltorio**
+  (`201` en los `POST`, `200` en el resto).
+- **Error**: siempre `{ code, message, additionalInfo? }`.
+
+| `code`           | HTTP  | Cuándo aparece                                     |
+| ---------------- | ----- | -------------------------------------------------- |
+| `BOOK-E-001`     | `400` | Ya existe un libro con ese ISBN                    |
+| `BOOK-E-002`     | `404` | No existe un libro con ese id                      |
+| `BAD_REQUEST`    | `400` | Falla la validación del body o de los query params |
+| `NOT_FOUND`      | `404` | Ruta inexistente                                   |
+| `INTERNAL_ERROR` | `500` | Error inesperado (el detalle solo va al log)       |
+
+---
+
+## Ejemplos de uso de los endpoints
+
+| Método   | Endpoint                      | Descripción              |
+| -------- | ----------------------------- | ------------------------ |
+| `POST`   | `/books`                      | Crear libro              |
+| `POST`   | `/books/seed`                 | Cargar 50 libros de demo |
+| `GET`    | `/books`                      | Listar libros (paginado) |
+| `GET`    | `/books/search?category=`     | Buscar por categoría     |
+| `GET`    | `/books/low-stock?threshold=` | Libros con stock bajo    |
+| `GET`    | `/books/{id}`                 | Obtener libro por id     |
+| `PUT`    | `/books/{id}`                 | Actualizar libro         |
+| `DELETE` | `/books/{id}`                 | Eliminar libro           |
+| `POST`   | `/books/{id}/calculate-price` | Precio de venta sugerido |
+
+> Los ejemplos usan `curl` con comillas simples (bash, git-bash, WSL, macOS,
+> Linux). En **PowerShell** las comillas simples no escapan igual: importa la
+> [colección de Postman](postman/bookstore-inventory-api.postman_collection.json)
+> — ya trae ejemplos de respuesta para cada caso — o usa `Invoke-RestMethod`.
+
+### Crear un libro
+
+```bash
+curl -X POST http://localhost:3000/books \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "title": "The Pragmatic Programmer",
+    "author": "David Thomas",
+    "isbn": "978-0135957059",
+    "costUsd": 34.99,
+    "stockQuantity": 12,
+    "category": "Software Engineering",
+    "supplierCountry": "US"
+  }'
+```
+
+`201 Created` — devuelve solo el id generado:
+
+```json
+{ "id": 1 }
+```
+
+`400 Bad Request` si el ISBN ya existe:
+
+```json
+{
+  "code": "BOOK-E-001",
+  "message": "A book with that ISBN code already exists"
+}
+```
+
+`400 Bad Request` si el body no valida:
+
+```json
+{
+  "code": "BAD_REQUEST",
+  "message": "title must be a string, costUsd must not be less than 0"
+}
+```
+
+### Cargar el catálogo de demostración
+
+Endpoint público, sin body ni parámetros: inserta 50 libros con variedad de
+categorías, países de origen y niveles de stock (varios por debajo de 10, para
+probar `/books/low-stock`). Todos nacen con `sellingPriceLocal` en `null`.
+
+```bash
+curl -X POST http://localhost:3000/books/seed
+```
+
+`201 Created`:
+
+```json
+{ "requested": 50, "created": 50, "skipped": 0 }
+```
+
+Es idempotente: los libros cuyo ISBN ya está cargado se omiten en lugar de
+fallar, así que una segunda llamada no duplica nada.
+
+```json
+{ "requested": 50, "created": 0, "skipped": 50 }
+```
+
+### Listar libros (paginado)
+
+`page` y `limit` son opcionales; por defecto `page=1` y `limit=10`.
+
+```bash
+curl 'http://localhost:3000/books?page=1&limit=10'
+```
+
+`200 OK` — la metadata de paginación viaja dentro del propio cuerpo:
+
+```json
+{
+  "books": [
+    {
+      "id": 1,
+      "title": "The Pragmatic Programmer",
+      "author": "David Thomas",
+      "isbn": "978-0135957059",
+      "costUsd": 34.99,
+      "sellingPriceLocal": null,
+      "stockQuantity": 12,
+      "category": "Software Engineering",
+      "supplierCountry": "US",
+      "createdAt": "2026-08-01T12:00:00.000Z",
+      "updatedAt": "2026-08-01T12:00:00.000Z"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 10
+}
+```
+
+### Obtener un libro por id
+
+```bash
+curl http://localhost:3000/books/1
+```
+
+`200 OK` devuelve el libro completo. Si no existe, `404`:
+
+```json
+{ "code": "BOOK-E-002", "message": "The book does not exist" }
+```
+
+### Buscar por categoría
+
+```bash
+curl 'http://localhost:3000/books/search?category=Software%20Engineering'
+```
+
+`200 OK` — array de libros (vacío si no hay coincidencias). `category` es
+obligatorio: sin él la respuesta es `400 BAD_REQUEST`.
+
+### Libros con stock bajo
+
+Devuelve los libros cuyo `stockQuantity` es menor o igual al umbral.
+`threshold` es opcional y por defecto vale `10`.
+
+```bash
+curl 'http://localhost:3000/books/low-stock?threshold=5'
+```
+
+`200 OK` — array de libros.
+
+### Actualizar un libro
+
+`PUT` reemplaza el recurso: todos los campos del body son obligatorios.
+
+```bash
+curl -X PUT http://localhost:3000/books/1 \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "title": "The Pragmatic Programmer",
+    "author": "David Thomas",
+    "isbn": "978-0135957059",
+    "costUsd": 29.99,
+    "stockQuantity": 20,
+    "category": "Software Engineering",
+    "supplierCountry": "US"
+  }'
+```
+
+`200 OK` — devuelve el libro actualizado, con `updatedAt` refrescado.
+Errores posibles: `404 BOOK-E-002` (no existe) y `400 BOOK-E-001` (el ISBN ya
+pertenece a otro libro).
+
+### Eliminar un libro
+
+```bash
+curl -X DELETE http://localhost:3000/books/1
+```
+
+`200 OK`:
+
+```json
+{ "id": 1 }
+```
+
+`404 BOOK-E-002` si el libro no existe.
+
+### Calcular el precio de venta sugerido
+
+Toma el `costUsd` del libro, obtiene la tasa USD → **VES** (moneda local de la
+cadena), aplica un margen del **40 %**, guarda el resultado en
+`sellingPriceLocal` y devuelve el cálculo detallado.
+
+```bash
+curl -X POST http://localhost:3000/books/1/calculate-price
+```
+
+`201 Created`:
+
+```json
+{
+  "bookId": 1,
+  "costUsd": 34.99,
+  "exchangeRate": 208.42,
+  "costLocal": 7292.62,
+  "marginPercentage": 40,
+  "sellingPriceLocal": 10209.67,
+  "currency": "VES",
+  "calculationTimestamp": "2026-08-01T12:00:00.000Z"
+}
+```
+
+Cómo se obtiene la tasa:
+
+1. Se consulta `https://api.exchangerate-api.com/v4/latest/USD` con un timeout
+   de 5 s.
+2. Si la API no responde, devuelve un error o no trae la moneda, se registra un
+   `WARN` y se usa una **tasa por defecto**, de modo que el cálculo nunca se
+   interrumpe.
+
+> En la práctica el plan gratuito de `exchangerate-api.com` no publica `VES`,
+> así que lo normal al ejecutar en local es ver la tasa de reserva y este aviso
+> en los logs: `WARN [ExchangeRateApiProvider] Using the fallback rate for VES`.
+> El endpoint responde `201` igualmente.
+
+`404 BOOK-E-002` si el libro no existe.
+
+---
+
+## Estado actual
+
+Implementados los ocho endpoints del documento de requisitos, con persistencia
+en PostgreSQL vía Prisma, mapeo de errores de dominio a HTTP y logging de cada
+petición. Los 31 tests unitarios pasan (`npm test`).
+
+Pendientes conocidos:
+
+- Validación del **formato** del ISBN (10 o 13 dígitos): hoy solo se valida que
+  sea un string y que no esté duplicado.
+- `costUsd` usa `@Min(0)`, así que acepta `0`; la regla de negocio pide `> 0`.
+- `test/app.e2e-spec.ts` sigue siendo el placeholder de NestJS (espera
+  `GET /` → "Hello World!", ruta que no existe), por lo que `npm run test:e2e`
+  falla.
