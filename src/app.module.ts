@@ -1,14 +1,22 @@
 import { Module } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core'
 import { BookModule } from './book/book.module'
 import { UuidModule } from './core/uuid/uuid.module'
 import { DateModule } from './core/date/date.module'
+import { PrismaModule } from './core/prisma/prisma.module'
 import { LoggingInterceptor } from './core/logger/interceptors/logging.interceptor'
 import { DomainExceptionFilter } from './core/response/filters/exception.filter'
 import { ResultInterceptor } from './core/response/interceptors/result.interceptor'
 
 @Module({
-  imports: [UuidModule, DateModule, BookModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    UuidModule,
+    DateModule,
+    PrismaModule,
+    BookModule,
+  ],
   controllers: [],
   providers: [
     { provide: APP_FILTER, useClass: DomainExceptionFilter },

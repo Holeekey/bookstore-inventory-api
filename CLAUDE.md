@@ -17,8 +17,16 @@ npm run lint          # eslint --fix
 npm run format        # prettier
 npm test              # unit tests (jest, *.spec.ts under src/)
 npm run test:e2e      # e2e (test/jest-e2e.json)
-docker compose up -d  # postgres 16 (not wired to the app yet)
+
+docker compose up -d       # postgres 16 (host port = POSTGRES_PORT in .env)
+npm run prisma:migrate     # create + apply a migration (dev)
+npm run prisma:deploy      # apply pending migrations (prod)
+npm run prisma:generate    # regenerate the client (also runs on postinstall)
+npm run prisma:studio      # browse the data
 ```
+
+Copy [.env.example](.env.example) to `.env` before running anything: it feeds both
+`docker-compose.yml` (`POSTGRES_*`) and Prisma (`DATABASE_URL`).
 
 ## Architecture
 
@@ -39,7 +47,7 @@ src/book/
       codes/<domain>-exception-codes.enum.ts
 ```
 
-`src/core/` holds the cross-cutting primitives shared by every module: `Result`, `Optional`, `Exception`, `Service`, the HTTP layer (`response/`, `logger/`), plus the global `DateModule` and `UuidModule`.
+`src/core/` holds the cross-cutting primitives shared by every module: `Result`, `Optional`, `Exception`, `Service`, the HTTP layer (`response/`, `logger/`), plus the global `DateModule`, `UuidModule` and `PrismaModule`.
 
 ### Core primitives (required)
 
@@ -70,6 +78,15 @@ export const BOOK_REPO = Symbol('BookRepo')
 
 and injected with `@Inject(BOOK_REPO) private bookRepo: BookRepo`. **The type must be imported as `import { BOOK_REPO, type BookRepo }`**: the interface is erased at compile time and without `type` the decorator metadata emit breaks (`isolatedModules` is on).
 
+### Persistence (Prisma 7 + Postgres)
+
+- Schema in [prisma/schema.prisma](prisma/schema.prisma), migrations in `prisma/migrations/`, CLI config in [prisma.config.ts](prisma.config.ts) (it loads `.env` through `dotenv/config`; the datasource URL is **not** in the schema).
+- Prisma 7 needs a **driver adapter**: the client is built with `PrismaPg` over `DATABASE_URL`. `PrismaService` ([src/core/prisma/prisma.service.ts](src/core/prisma/prisma.service.ts)) extends `PrismaClient`, reads the URL from `ConfigService` and connects/disconnects with the Nest lifecycle. `PrismaModule` is `@Global()`, so any adapter can just inject `PrismaService`.
+- The client is generated **into the source tree** (`src/generated/prisma`, gitignored, `moduleFormat = "cjs"`). It has to live under `src/` so `nest build` keeps emitting `dist/main.js`; for the same reason `prisma.config.ts` is excluded in [tsconfig.build.json](tsconfig.build.json). Run `npm run prisma:generate` after every schema change.
+- The entity is not the Prisma model: `BookPostgresRepo` maps rows to `Book` in both directions (`Decimal` → `number`) so nothing outside `adapters/repos/` imports the generated types. Prisma errors are translated there too — `P2002` → `IsbnExistsException`, `P2025` → `BookNotFoundException`, anything else is rethrown so the filter answers a 500.
+- Money columns are `Decimal(10,2)` / `Decimal(12,2)` and timestamps `Timestamptz(3)`; `createdAt`/`updatedAt` are set by the service through `DateProvider`, not by the database.
+- `BookMockRepo` stays as the in-memory double for tests; production wiring in `book.module.ts` uses `BookPostgresRepo`.
+
 ## Code conventions
 
 - Prettier: **no semicolons**, single quotes, trailing commas. Run `npm run format` before wrapping up a change.
@@ -80,7 +97,7 @@ and injected with `@Inject(BOOK_REPO) private bookRepo: BookRepo`. **The type mu
 
 ## Adding a use case
 
-1. Extend the port (`ports/book.repo.ts`) and its adapter if needed.
+1. Extend the port (`ports/book.repo.ts`) and its adapters (`BookPostgresRepo`, `BookMockRepo`) if needed. If it needs new columns, edit `prisma/schema.prisma` and run `npm run prisma:migrate`.
 2. Create `services/<use-case>/types/input.ts` and `output.ts`.
 3. Create `services/<use-case>/<name>.service.ts`, `@Injectable()`, implementing `Service<Input, Output>`.
 4. Add any new exception under `exceptions/` and its code in `codes/book-exception-codes.enum.ts`. Each one declares its own HTTP status: `super(CODE, 404, 'message')`.
@@ -100,7 +117,7 @@ Working branch: `development`. Main branch: `main`.
 
 ## Current state and pending work
 
-Implemented: `POST /books`, `GET /books/{id}`, duplicate-ISBN validation, error-to-HTTP mapping and request logging, **in-memory** persistence (`BookMockRepo`).
+Implemented: `POST /books`, `GET /books/{id}`, duplicate-ISBN validation, error-to-HTTP mapping and request logging, **Postgres persistence through Prisma** (`BookPostgresRepo`).
 
 Pending (per the requirements doc):
 
@@ -108,6 +125,5 @@ Pending (per the requirements doc):
 - `GET /books/search?category=`, `GET /books/low-stock?threshold=`.
 - `POST /books/{id}/calculate-price`: rate from `https://api.exchangerate-api.com/v4/latest/USD`, 40% margin, fallback rate when the API fails (must sit behind a port + adapter, not a `fetch` inside the service). A 503 needs no extra wiring: the new exception just declares `super(CODE, 503, '...')`.
 - ISBN format validation (10 or 13 digits) and `costUsd > 0` (`@Min(0)` currently accepts 0).
-- Real Postgres persistence: `docker-compose.yml` brings the database up but there is no ORM or configuration; the new adapter goes in `adapters/repos/` without touching the services.
 - Tests: there are no `*.spec.ts` files, and `test/app.e2e-spec.ts` is the Nest placeholder (it fails — it expects `GET /` → "Hello World!"). Adding unit tests first needs `"moduleDirectories": ["node_modules", "<rootDir>/.."]` in the `jest` block of `package.json`: `rootDir` is `src`, so the absolute `src/...` imports do not resolve today.
 - `README.md` is still the NestJS starter readme.
