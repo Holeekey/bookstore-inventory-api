@@ -623,6 +623,83 @@
               "body": "{\n  \"code\": \"BOOK-E-002\",\n  \"message\": \"The book does not exist\"\n}"
             }
           ]
+        },
+        {
+          "name": "Calculate suggested selling price",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books/{{bookId}}/calculate-price",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "books",
+                "{{bookId}}",
+                "calculate-price"
+              ]
+            },
+            "description": "Calcula el precio de venta sugerido de un libro a partir de su `costUsd`, la tasa de cambio actual USD → VES y un margen de ganancia del 40%. Guarda el resultado en `sellingPriceLocal` del libro.\n\n**Parámetros**\n- `id` (path, entero, requerido): id del libro.\n\n**Respuestas**\n- `200 OK`: `{ bookId, costUsd, exchangeRate, costLocal, marginPercentage, sellingPriceLocal, currency, calculationTimestamp }`.\n- `400 BAD_REQUEST`: el id no es un entero.\n- `404 BOOK-E-002`: no existe un libro con ese id.\n\nSi la API de tasas de cambio no responde, se usa una tasa de cambio por defecto para no interrumpir el cálculo."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/books/{{bookId}}/calculate-price",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "books",
+                    "{{bookId}}",
+                    "calculate-price"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"bookId\": 1,\n  \"costUsd\": 34.99,\n  \"exchangeRate\": 208.42,\n  \"costLocal\": 7292.62,\n  \"marginPercentage\": 40,\n  \"sellingPriceLocal\": 10209.67,\n  \"currency\": \"VES\",\n  \"calculationTimestamp\": \"2026-08-01T12:00:00.000Z\"\n}"
+            },
+            {
+              "name": "404 Libro inexistente",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/books/999/calculate-price",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "books",
+                    "999",
+                    "calculate-price"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"code\": \"BOOK-E-002\",\n  \"message\": \"The book does not exist\"\n}"
+            }
+          ]
         }
       ]
     }

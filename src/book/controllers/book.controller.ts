@@ -22,6 +22,8 @@ import { SearchBooksByCategoryService } from '../services/search-by-category/sea
 import { SearchBooksByCategoryInput } from '../services/search-by-category/types/input'
 import { FindLowStockBooksService } from '../services/low-stock/find-low-stock-books.service'
 import { FindLowStockBooksInput } from '../services/low-stock/types/input'
+import { CalculateBookPriceService } from '../services/calculate-price/calculate-book-price.service'
+import { CalculateBookPriceInput } from '../services/calculate-price/types/input'
 
 @Controller('books')
 export class BookController {
@@ -33,6 +35,7 @@ export class BookController {
     private deleteBook: DeleteBookService,
     private searchBooksByCategory: SearchBooksByCategoryService,
     private findLowStockBooks: FindLowStockBooksService,
+    private calculateBookPrice: CalculateBookPriceService,
   ) {}
 
   @Post()
@@ -73,5 +76,10 @@ export class BookController {
   @Delete(':id')
   async delete(@Param() params: DeleteBookInput) {
     return await this.deleteBook.execute(params)
+  }
+
+  @Post(':id/calculate-price')
+  async calculatePrice(@Param() params: CalculateBookPriceInput) {
+    return await this.calculateBookPrice.execute(params)
   }
 }

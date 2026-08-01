@@ -9,8 +9,11 @@ import { UpdateBookService } from './services/update/update-book.service'
 import { DeleteBookService } from './services/delete/delete-book.service'
 import { SearchBooksByCategoryService } from './services/search-by-category/search-books-by-category.service'
 import { FindLowStockBooksService } from './services/low-stock/find-low-stock-books.service'
+import { CalculateBookPriceService } from './services/calculate-price/calculate-book-price.service'
+import { ExchangeRateModule } from 'src/exchange-rate/exchange-rate.module'
 
 @Module({
+  imports: [ExchangeRateModule],
   controllers: [BookController],
   providers: [
     { provide: BOOK_REPO, useClass: BookPostgresRepo },
@@ -21,6 +24,7 @@ import { FindLowStockBooksService } from './services/low-stock/find-low-stock-bo
     DeleteBookService,
     SearchBooksByCategoryService,
     FindLowStockBooksService,
+    CalculateBookPriceService,
   ],
 })
 export class BookModule {}
