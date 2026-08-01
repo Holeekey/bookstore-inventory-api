@@ -1,11 +1,23 @@
-import { Controller, Get } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post } from '@nestjs/common'
+import { CreateBookService } from '../services/create/create-book.service'
+import { CreateBookInput } from '../services/create/types/input'
+import { FindOneBookService } from '../services/find-one/find-one-book.service'
+import { FindOneBookInput } from '../services/find-one/types/input'
 
 @Controller('books')
 export class BookController {
-  constructor() {}
+  constructor(
+    private createBook: CreateBookService,
+    private findOneBook: FindOneBookService,
+  ) {}
 
-  @Get()
-  test(): string {
-    return 'test'
+  @Post()
+  async create(@Body() body: CreateBookInput) {
+    return await this.createBook.execute(body)
+  }
+
+  @Get(':id')
+  async findOne(@Param() params: FindOneBookInput) {
+    return await this.findOneBook.execute(params)
   }
 }

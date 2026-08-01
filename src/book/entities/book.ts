@@ -1,10 +1,10 @@
 export interface Book {
-  id: number
+  id?: number
   title: string
   author: string
   isbn: string
-  costUsd: string
-  sellingPriceLocal: number
+  costUsd: number
+  sellingPriceLocal: number | null
   stockQuantity: number
   category: string
   supplierCountry: string

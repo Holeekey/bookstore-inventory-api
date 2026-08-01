@@ -9,7 +9,7 @@ export class Optional<T> {
     return new Optional(value)
   }
 
-  isPresent(): boolean {
+  exists(): boolean {
     return this.value !== null && this.value !== undefined
   }
 
@@ -21,6 +21,6 @@ export class Optional<T> {
   }
 
   orElse(other: T): T {
-    return this.isPresent() ? this.get() : other
+    return this.exists() ? this.get() : other
   }
 }

@@ -11,43 +11,127 @@
       "value": "http://localhost:3000",
       "type": "string",
       "description": "URL base de la API. El puerto se define por la variable de entorno PORT (por defecto 3000, ver src/main.ts)."
+    },
+    {
+      "key": "bookId",
+      "value": "1",
+      "type": "string",
+      "description": "Id numérico de un libro."
     }
   ],
   "item": [
     {
       "name": "Books",
-      "description": "Endpoints del recurso Book (src/book).",
+      "description": "Endpoints del recurso Book.",
       "item": [
         {
-          "name": "Get books (placeholder)",
+          "name": "Create book",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Pragmatic Programmer\",\n  \"author\": \"David Thomas\",\n  \"isbn\": \"978-0135957059\",\n  \"costUsd\": 34.99,\n  \"stockQuantity\": 12,\n  \"category\": \"Software Engineering\",\n  \"supplierCountry\": \"US\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/books",
               "host": ["{{baseUrl}}"],
               "path": ["books"]
             },
-            "description": "Endpoint de prueba definido en `BookController` (src/book/controllers/book.controller.ts). Actualmente no recibe parámetros ni consulta datos reales; responde el string literal `\"test\"`. Este endpoint deberá reemplazarse por el listado real de libros cuando se implemente la capa de servicio/persistencia."
+            "description": "Crea un libro."
           },
           "response": [
             {
-              "name": "200 OK (placeholder response)",
+              "name": "201 Created",
               "originalRequest": {
-                "method": "GET",
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"The Pragmatic Programmer\",\n  \"author\": \"David Thomas\",\n  \"isbn\": \"978-0135957059\",\n  \"costUsd\": 34.99,\n  \"stockQuantity\": 12,\n  \"category\": \"Software Engineering\",\n  \"supplierCountry\": \"US\"\n}"
+                },
                 "url": {
                   "raw": "{{baseUrl}}/books",
                   "host": ["{{baseUrl}}"],
                   "path": ["books"]
                 }
               },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"value\": {\n    \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Find one book",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books/{{bookId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", "{{bookId}}"]
+            },
+            "description": "Obtiene un libro por su id."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/books/{{bookId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["books", "{{bookId}}"]
+                }
+              },
               "status": "OK",
               "code": 200,
-              "_postman_previewlanguage": "text",
+              "_postman_previewlanguage": "json",
               "header": [
-                { "key": "Content-Type", "value": "text/html; charset=utf-8" }
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
               ],
-              "body": "test"
+              "body": "{\n  \"value\": {\n    \"id\": 1,\n    \"title\": \"The Pragmatic Programmer\",\n    \"author\": \"David Thomas\",\n    \"isbn\": \"978-0135957059\",\n    \"costUsd\": 34.99,\n    \"sellingPriceLocal\": null,\n    \"stockQuantity\": 12,\n    \"category\": \"Software Engineering\",\n    \"supplierCountry\": \"US\",\n    \"createdAt\": \"2026-08-01T12:00:00.000Z\",\n    \"updatedAt\": \"2026-08-01T12:00:00.000Z\"\n  }\n}"
+            },
+            {
+              "name": "200 OK (libro inexistente)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/books/999",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["books", "999"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"exception\": {\n    \"code\": \"BOOK-E-002\"\n  }\n}"
             }
           ]
         }

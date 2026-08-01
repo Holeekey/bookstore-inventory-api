@@ -1,6 +1,6 @@
 import { IsInt } from 'class-validator'
 
-export class CreateBookOutput {
+export class FindOneBookInput {
   @IsInt()
   id: number
 }
