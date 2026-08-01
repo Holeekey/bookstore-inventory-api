@@ -1,0 +1,57 @@
+{
+  "info": {
+    "name": "Bookstore Inventory API",
+    "description": "Colección Postman para API de inventario de librería",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "b00k5t0r3-1nv3nt0ry-4p1-0001"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string",
+      "description": "URL base de la API. El puerto se define por la variable de entorno PORT (por defecto 3000, ver src/main.ts)."
+    }
+  ],
+  "item": [
+    {
+      "name": "Books",
+      "description": "Endpoints del recurso Book (src/book).",
+      "item": [
+        {
+          "name": "Get books (placeholder)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["books"]
+            },
+            "description": "Endpoint de prueba definido en `BookController` (src/book/controllers/book.controller.ts). Actualmente no recibe parámetros ni consulta datos reales; responde el string literal `\"test\"`. Este endpoint deberá reemplazarse por el listado real de libros cuando se implemente la capa de servicio/persistencia."
+          },
+          "response": [
+            {
+              "name": "200 OK (placeholder response)",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/books",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["books"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                { "key": "Content-Type", "value": "text/html; charset=utf-8" }
+              ],
+              "body": "test"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
