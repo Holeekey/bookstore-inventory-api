@@ -39,16 +39,26 @@ src/book/
       codes/<domain>-exception-codes.enum.ts
 ```
 
-`src/core/` holds the cross-cutting primitives shared by every module: `Result`, `Optional`, `Exception`, `Service`, plus the global `DateModule` and `UuidModule`.
+`src/core/` holds the cross-cutting primitives shared by every module: `Result`, `Optional`, `Exception`, `Service`, the HTTP layer (`response/`, `logger/`), plus the global `DateModule` and `UuidModule`.
 
 ### Core primitives (required)
 
 - **`Service<Input, Output>`** — every use case implements `execute(data: Input): Promise<Result<Output>>`.
-- **`Result<T>`** — business errors are returned, not thrown. `Result.success(v)` / `Result.failure(exception)`; `isException()`, `unwrap()`, and `convertToOther()` to propagate a failure while changing the generic type.
+- **`Result<T>`** — business errors are returned, not thrown. `Result.success(v)` / `Result.failure(exception)`; `isException()`, `unwrap()`, and `convertToOther()` to propagate a failure while changing the generic type. `Result.success(undefined)` throws, so a use case with nothing to return must still return something (e.g. `Result.success({ id })`).
 - **`Optional<T>`** — what repos return from single-item lookups: `exists()`, `get()`, `orElse()`. Never return a bare `null` from a port.
-- **`Exception`** — abstract base carrying `code` (string like `BOOK-E-001`) and `message`. Every business error is its own class under `exceptions/`, and its code goes in the domain enum.
+- **`Exception`** — abstract base carrying `code` (string like `BOOK-E-001`), `http` (the status the filter will answer with) and `message`. Every business error is its own class under `exceptions/`, and its code goes in the domain enum.
 - **`DateProvider`** (`DATE_PROVIDER`) — inject it instead of calling `new Date()` directly, so services stay testable.
 - **`UuidGenerator`** — globally available; `Book` ids are currently numeric and assigned by the repo.
+
+### HTTP layer
+
+Registered globally in [src/app.module.ts](src/app.module.ts) via `APP_FILTER` / `APP_INTERCEPTOR` (not in `main.ts`). Order matters: `LoggingInterceptor` is declared first so it wraps `ResultInterceptor` and logs the final body.
+
+- **`ResultInterceptor`** ([src/core/response/interceptors/result.interceptor.ts](src/core/response/interceptors/result.interceptor.ts)) — knows only the happy path: `data instanceof Result ? result.unwrap() : data`. It never checks `isException()`; on a failure `unwrap()` **rethrows** the domain `Exception`, and since that happens inside an rxjs `map` it surfaces as an observable error. Anything that is not a `Result` passes through untouched.
+- **`DomainExceptionFilter`** ([src/core/response/filters/exception.filter.ts](src/core/response/filters/exception.filter.ts)) — `@Catch()` with no argument. Three branches: domain `Exception` → its own `http`; Nest `HttpException` (ValidationPipe, unknown routes) → its status with the `message` array flattened; anything else → logs the stack and answers an opaque 500.
+- **`LoggingInterceptor`** ([src/core/logger/interceptors/logging.interceptor.ts](src/core/logger/interceptors/logging.interceptor.ts)) — logs every request with no opt-in: `[INPUT]` with method, URL, handler and body; `[OUTPUT]` with duration and body; `✕` with duration and the error, using the same text the client receives.
+
+**Response contract**: success returns the use-case value bare, with no envelope (201 on `@Post`, 200 elsewhere). Every error returns `{ code, message, additionalInfo? }` — domain codes (`BOOK-E-XXX`) for business errors, generic ones (`BAD_REQUEST`, `NOT_FOUND`, `INTERNAL_ERROR`) for the rest. Because the envelope is bare, `Result`'s `info` is not serialized: pagination metadata belongs inside the service's own output type.
 
 ### Dependency injection
 
@@ -66,14 +76,14 @@ and injected with `@Inject(BOOK_REPO) private bookRepo: BookRepo`. **The type mu
 - Internal imports use absolute paths from the root: `import { Book } from 'src/book/entities/book'` (avoid long relative paths). Short relative paths are fine within the same module (`../services/...`).
 - Files in `kebab-case` with a role suffix: `.service.ts`, `.repo.ts`, `.controller.ts`, `.exception.ts`, `.module.ts`.
 - Input DTOs are **classes** with `class-validator` decorators (not interfaces): the global `ValidationPipe` in [src/main.ts](src/main.ts) uses `whitelist` and `transform` with `enableImplicitConversion`, which is why route params (`@Param() params: FindOneBookInput`) are coerced to numbers automatically.
-- Controllers hold no logic and do no error mapping: they `await this.service.execute(...)` and return the `Result`.
+- Controllers hold no logic and do no error mapping: they `await this.service.execute(...)` and return the `Result` as-is. The global interceptor unwraps it and the global filter maps the failure — a controller should never inspect `isException()` nor set a status by hand.
 
 ## Adding a use case
 
 1. Extend the port (`ports/book.repo.ts`) and its adapter if needed.
 2. Create `services/<use-case>/types/input.ts` and `output.ts`.
 3. Create `services/<use-case>/<name>.service.ts`, `@Injectable()`, implementing `Service<Input, Output>`.
-4. Add any new exception under `exceptions/` and its code in `codes/book-exception-codes.enum.ts`.
+4. Add any new exception under `exceptions/` and its code in `codes/book-exception-codes.enum.ts`. Each one declares its own HTTP status: `super(CODE, 404, 'message')`.
 5. Register the service in `book.module.ts` and expose the endpoint in `controllers/book.controller.ts`.
 6. Document the endpoint in [postman/bookstore-inventory-api.postman_collection.json](postman/bookstore-inventory-api.postman_collection.json).
 
@@ -90,15 +100,14 @@ Working branch: `development`. Main branch: `main`.
 
 ## Current state and pending work
 
-Implemented: `POST /books`, `GET /books/{id}`, duplicate-ISBN validation, **in-memory** persistence (`BookMockRepo`).
+Implemented: `POST /books`, `GET /books/{id}`, duplicate-ISBN validation, error-to-HTTP mapping and request logging, **in-memory** persistence (`BookMockRepo`).
 
 Pending (per the requirements doc):
 
 - `GET /books` (paginated — `findMany` already exists on the port), `PUT /books/{id}`, `DELETE /books/{id}`.
 - `GET /books/search?category=`, `GET /books/low-stock?threshold=`.
-- `POST /books/{id}/calculate-price`: rate from `https://api.exchangerate-api.com/v4/latest/USD`, 40% margin, fallback rate when the API fails (must sit behind a port + adapter, not a `fetch` inside the service).
-- **Error-to-HTTP mapping**: a failure currently serializes as `{"exception":{"code":"BOOK-E-002"}}` with status **200**. An interceptor/filter is missing to translate `Result.failure` into 400/404/500/503 and unwrap `value` on success.
+- `POST /books/{id}/calculate-price`: rate from `https://api.exchangerate-api.com/v4/latest/USD`, 40% margin, fallback rate when the API fails (must sit behind a port + adapter, not a `fetch` inside the service). A 503 needs no extra wiring: the new exception just declares `super(CODE, 503, '...')`.
 - ISBN format validation (10 or 13 digits) and `costUsd > 0` (`@Min(0)` currently accepts 0).
 - Real Postgres persistence: `docker-compose.yml` brings the database up but there is no ORM or configuration; the new adapter goes in `adapters/repos/` without touching the services.
-- Tests: there are no `*.spec.ts` files, and `test/app.e2e-spec.ts` is the Nest placeholder (it fails — it expects `GET /` → "Hello World!").
+- Tests: there are no `*.spec.ts` files, and `test/app.e2e-spec.ts` is the Nest placeholder (it fails — it expects `GET /` → "Hello World!"). Adding unit tests first needs `"moduleDirectories": ["node_modules", "<rootDir>/.."]` in the `jest` block of `package.json`: `rootDir` is `src`, so the absolute `src/...` imports do not resolve today.
 - `README.md` is still the NestJS starter readme.

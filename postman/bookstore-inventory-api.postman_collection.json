@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Bookstore Inventory API",
-    "description": "Colección Postman para API de inventario de librería",
+    "description": "Colección Postman para API de inventario de librería.\n\nContrato de respuesta:\n- Éxito: el cuerpo es el valor devuelto por el caso de uso, sin envoltorio.\n- Error: `{ \"code\": \"...\", \"message\": \"...\" }` con el status HTTP correspondiente. Los errores de dominio traen su código (`BOOK-E-XXX`); los de infraestructura o validación, un código genérico (`BAD_REQUEST`, `NOT_FOUND`, `INTERNAL_ERROR`).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_postman_id": "b00k5t0r3-1nv3nt0ry-4p1-0001"
   },
@@ -43,7 +43,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["books"]
             },
-            "description": "Crea un libro."
+            "description": "Crea un libro. Devuelve el id asignado."
           },
           "response": [
             {
@@ -72,7 +72,63 @@
                   "value": "application/json; charset=utf-8"
                 }
               ],
-              "body": "{\n  \"value\": {\n    \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\"\n  }\n}"
+              "body": "{\n  \"id\": 1\n}"
+            },
+            {
+              "name": "400 Bad Request (ISBN duplicado)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"The Pragmatic Programmer\",\n  \"author\": \"David Thomas\",\n  \"isbn\": \"978-0135957059\",\n  \"costUsd\": 34.99,\n  \"stockQuantity\": 12,\n  \"category\": \"Software Engineering\",\n  \"supplierCountry\": \"US\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/books",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["books"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"code\": \"BOOK-E-001\",\n  \"message\": \"A book with that ISBN code already exists\"\n}"
+            },
+            {
+              "name": "400 Bad Request (validación del body)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"author\": \"David Thomas\",\n  \"isbn\": \"978-0135957059\",\n  \"costUsd\": -5,\n  \"stockQuantity\": 12,\n  \"category\": \"Software Engineering\",\n  \"supplierCountry\": \"US\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/books",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["books"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"code\": \"BAD_REQUEST\",\n  \"message\": \"title must be a string, costUsd must not be less than 0\"\n}"
             }
           ]
         },
@@ -109,10 +165,10 @@
                   "value": "application/json; charset=utf-8"
                 }
               ],
-              "body": "{\n  \"value\": {\n    \"id\": 1,\n    \"title\": \"The Pragmatic Programmer\",\n    \"author\": \"David Thomas\",\n    \"isbn\": \"978-0135957059\",\n    \"costUsd\": 34.99,\n    \"sellingPriceLocal\": null,\n    \"stockQuantity\": 12,\n    \"category\": \"Software Engineering\",\n    \"supplierCountry\": \"US\",\n    \"createdAt\": \"2026-08-01T12:00:00.000Z\",\n    \"updatedAt\": \"2026-08-01T12:00:00.000Z\"\n  }\n}"
+              "body": "{\n  \"id\": 1,\n  \"title\": \"The Pragmatic Programmer\",\n  \"author\": \"David Thomas\",\n  \"isbn\": \"978-0135957059\",\n  \"costUsd\": 34.99,\n  \"sellingPriceLocal\": null,\n  \"stockQuantity\": 12,\n  \"category\": \"Software Engineering\",\n  \"supplierCountry\": \"US\",\n  \"createdAt\": \"2026-08-01T12:00:00.000Z\",\n  \"updatedAt\": \"2026-08-01T12:00:00.000Z\"\n}"
             },
             {
-              "name": "200 OK (libro inexistente)",
+              "name": "404 Not Found (libro inexistente)",
               "originalRequest": {
                 "method": "GET",
                 "header": [],
@@ -122,8 +178,8 @@
                   "path": ["books", "999"]
                 }
               },
-              "status": "OK",
-              "code": 200,
+              "status": "Not Found",
+              "code": 404,
               "_postman_previewlanguage": "json",
               "header": [
                 {
@@ -131,7 +187,7 @@
                   "value": "application/json; charset=utf-8"
                 }
               ],
-              "body": "{\n  \"exception\": {\n    \"code\": \"BOOK-E-002\"\n  }\n}"
+              "body": "{\n  \"code\": \"BOOK-E-002\",\n  \"message\": \"The book does not exist\"\n}"
             }
           ]
         }
