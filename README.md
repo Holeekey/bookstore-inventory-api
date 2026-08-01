@@ -28,10 +28,10 @@ npm -v       # 10.x
 docker --version
 ```
 
-**Conexión a internet**: el cálculo de precio consulta
-`https://api.exchangerate-api.com/v4/latest/USD`. No es obligatoria — si la API
-falla o tarda más de 5 s, el sistema aplica una tasa por defecto y el endpoint
-sigue funcionando.
+**Conexión a internet**: el cálculo de precio consulta la API de tasas de
+cambio configurada (por defecto `https://ve.dolarapi.com/v1/dolares/oficial`).
+No es obligatoria — si la API falla o tarda más de 5 s, el sistema aplica una
+tasa por defecto y el endpoint sigue funcionando.
 
 ---
 
@@ -57,14 +57,15 @@ cp .env.example .env          # bash / git-bash / macOS / Linux
 Copy-Item .env.example .env   # PowerShell
 ```
 
-| Variable            | Valor por defecto  | Para qué sirve                              |
-| ------------------- | ------------------ | ------------------------------------------- |
-| `PORT`              | `3000`             | Puerto donde escucha la API                 |
-| `POSTGRES_USER`     | `admin`            | Usuario del contenedor de Postgres          |
-| `POSTGRES_PASSWORD` | `admin`            | Contraseña del contenedor de Postgres       |
-| `POSTGRES_DB`       | `bookstore`        | Nombre de la base de datos                  |
-| `POSTGRES_PORT`     | `5432`             | Puerto del **host** mapeado al contenedor   |
-| `DATABASE_URL`      | ver `.env.example` | Cadena de conexión que usan Prisma y la API |
+| Variable               | Valor por defecto  | Para qué sirve                              |
+| ---------------------- | ------------------ | ------------------------------------------- |
+| `PORT`                 | `3000`             | Puerto donde escucha la API                 |
+| `EXCHANGE_RATE_SOURCE` | `dolarapi`         | Fuente de la tasa de cambio (ver más abajo) |
+| `POSTGRES_USER`        | `admin`            | Usuario del contenedor de Postgres          |
+| `POSTGRES_PASSWORD`    | `admin`            | Contraseña del contenedor de Postgres       |
+| `POSTGRES_DB`          | `bookstore`        | Nombre de la base de datos                  |
+| `POSTGRES_PORT`        | `5432`             | Puerto del **host** mapeado al contenedor   |
+| `DATABASE_URL`         | ver `.env.example` | Cadena de conexión que usan Prisma y la API |
 
 > ⚠️ Si cambias cualquier `POSTGRES_*`, actualiza también `DATABASE_URL` a mano:
 > son dos valores independientes y Prisma solo lee `DATABASE_URL`.
@@ -403,16 +404,44 @@ curl -X POST http://localhost:3000/books/1/calculate-price
 
 Cómo se obtiene la tasa:
 
-1. Se consulta `https://api.exchangerate-api.com/v4/latest/USD` con un timeout
-   de 5 s.
+1. Se consulta la API configurada en `EXCHANGE_RATE_SOURCE` con un timeout de
+   5 s.
 2. Si la API no responde, devuelve un error o no trae la moneda, se registra un
    `WARN` y se usa una **tasa por defecto**, de modo que el cálculo nunca se
    interrumpe.
 
-> En la práctica el plan gratuito de `exchangerate-api.com` no publica `VES`,
-> así que lo normal al ejecutar en local es ver la tasa de reserva y este aviso
-> en los logs: `WARN [ExchangeRateApiProvider] Using the fallback rate for VES`.
-> El endpoint responde `201` igualmente.
+Hay dos adaptadores del mismo puerto `ExchangeRateProvider`:
+
+| `EXCHANGE_RATE_SOURCE`   | Adaptador                 | Fuente                                           |
+| ------------------------ | ------------------------- | ------------------------------------------------ |
+| `dolarapi` (por defecto) | `DolarApiProvider`        | `https://ve.dolarapi.com/v1/dolares/oficial`     |
+| `exchangerate-api`       | `ExchangeRateApiProvider` | `https://api.exchangerate-api.com/v4/latest/USD` |
+
+`DolarApiProvider` publica el **dólar oficial** (BCV) y toma el valor de
+`promedio` (o de `venta` si `promedio` viniera vacío); al ser una cotización
+USD → VES única, solo responde para `VES`.
+
+```bash
+curl https://ve.dolarapi.com/v1/dolares/oficial
+```
+
+```json
+{
+  "moneda": "USD",
+  "fuente": "oficial",
+  "nombre": "Dólar",
+  "compra": null,
+  "venta": null,
+  "promedio": 746.6297,
+  "fechaActualizacion": "2026-07-31T00:00:00-04:00"
+}
+```
+
+> El plan gratuito de `exchangerate-api.com` no publica `VES`, así que con
+> `EXCHANGE_RATE_SOURCE=exchangerate-api` lo normal es ver la tasa de reserva y
+> este aviso en los logs:
+> `WARN [ExchangeRateApiProvider] Using the fallback rate for VES`. El endpoint
+> responde `201` igualmente. Por eso el valor por defecto es `dolarapi`.
 
 `404 BOOK-E-002` si el libro no existe.
 
@@ -422,7 +451,7 @@ Cómo se obtiene la tasa:
 
 Implementados los ocho endpoints del documento de requisitos, con persistencia
 en PostgreSQL vía Prisma, mapeo de errores de dominio a HTTP y logging de cada
-petición. Los 31 tests unitarios pasan (`npm test`).
+petición. Los 44 tests unitarios pasan (`npm test`).
 
 Pendientes conocidos:
 
