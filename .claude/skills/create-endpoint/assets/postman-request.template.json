@@ -1,0 +1,54 @@
+{
+  "_comment": "Paste inside item[0].item (folder 'Books') of postman/bookstore-inventory-api.postman_collection.json. RULE: the description documents the CONTRACT ONLY — what it does, params/body, responses. No class names, no file paths, no architecture. Put every path/query value in a collection variable.",
+  "name": "<Endpoint name>",
+  "request": {
+    "method": "GET",
+    "header": [{ "key": "Content-Type", "value": "application/json" }],
+    "url": {
+      "raw": "{{baseUrl}}/books/{{bookId}}",
+      "host": ["{{baseUrl}}"],
+      "path": ["books", "{{bookId}}"]
+    },
+    "description": "Qué hace el endpoint en una frase.\n\n**Parámetros**\n- `id` (path, entero, requerido): id del libro.\n\n**Body** (solo POST/PUT)\n- `campo` (tipo, requerido/opcional): descripción y restricción.\n\n**Respuestas**\n- `200 OK`: qué devuelve.\n- `400 BAD_REQUEST`: parámetros o body inválidos.\n- `404 BOOK-E-00X`: cuándo ocurre."
+  },
+  "response": [
+    {
+      "name": "200 OK",
+      "originalRequest": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/books/{{bookId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["books", "{{bookId}}"]
+        }
+      },
+      "status": "OK",
+      "code": 200,
+      "_postman_previewlanguage": "json",
+      "header": [
+        { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+      ],
+      "body": "{\n  \"id\": 1\n}"
+    },
+    {
+      "name": "404 Not Found",
+      "originalRequest": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/books/999",
+          "host": ["{{baseUrl}}"],
+          "path": ["books", "999"]
+        }
+      },
+      "status": "Not Found",
+      "code": 404,
+      "_postman_previewlanguage": "json",
+      "header": [
+        { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+      ],
+      "body": "{\n  \"code\": \"BOOK-E-002\",\n  \"message\": \"The book does not exist\"\n}"
+    }
+  ]
+}

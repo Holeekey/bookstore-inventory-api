@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      POSTGRES_DB: ${POSTGRES_DB:-admin}
+    volumes:
+      - bookstore-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-admin}",
+        ]
+      interval: 10s
+      timeout: 5s
+      # retries: 5
+
+  api:
+    build: .
+    container_name: bookstore-api
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      PORT: ${PORT:-3000}
+      # Internal compose network: always postgres:5432, regardless of POSTGRES_PORT
+      DATABASE_URL: postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-admin}@postgres:5432/${POSTGRES_DB:-admin}?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  bookstore-postgres-data:

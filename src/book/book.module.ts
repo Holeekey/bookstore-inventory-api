@@ -1,0 +1,32 @@
+import { Module } from '@nestjs/common'
+import { BookController } from './controllers/book.controller'
+import { CreateBookService } from './services/create/create-book.service'
+import { BOOK_REPO } from './ports/book.repo'
+import { BookPostgresRepo } from './adapters/repos/book-postgres.repo'
+import { FindOneBookService } from './services/find-one/find-one-book.service'
+import { FindManyBooksService } from './services/find-many/find-many-books.service'
+import { UpdateBookService } from './services/update/update-book.service'
+import { DeleteBookService } from './services/delete/delete-book.service'
+import { SearchBooksByCategoryService } from './services/search-by-category/search-books-by-category.service'
+import { FindLowStockBooksService } from './services/low-stock/find-low-stock-books.service'
+import { CalculateBookPriceService } from './services/calculate-price/calculate-book-price.service'
+import { SeedBooksService } from './services/seed/seed-books.service'
+import { ExchangeRateModule } from 'src/exchange-rate/exchange-rate.module'
+
+@Module({
+  imports: [ExchangeRateModule],
+  controllers: [BookController],
+  providers: [
+    { provide: BOOK_REPO, useClass: BookPostgresRepo },
+    CreateBookService,
+    FindOneBookService,
+    FindManyBooksService,
+    UpdateBookService,
+    DeleteBookService,
+    SearchBooksByCategoryService,
+    FindLowStockBooksService,
+    CalculateBookPriceService,
+    SeedBooksService,
+  ],
+})
+export class BookModule {}
