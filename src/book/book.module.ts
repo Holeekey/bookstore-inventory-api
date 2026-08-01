@@ -7,6 +7,8 @@ import { FindOneBookService } from './services/find-one/find-one-book.service'
 import { FindManyBooksService } from './services/find-many/find-many-books.service'
 import { UpdateBookService } from './services/update/update-book.service'
 import { DeleteBookService } from './services/delete/delete-book.service'
+import { SearchBooksByCategoryService } from './services/search-by-category/search-books-by-category.service'
+import { FindLowStockBooksService } from './services/low-stock/find-low-stock-books.service'
 
 @Module({
   controllers: [BookController],
@@ -17,6 +19,8 @@ import { DeleteBookService } from './services/delete/delete-book.service'
     FindManyBooksService,
     UpdateBookService,
     DeleteBookService,
+    SearchBooksByCategoryService,
+    FindLowStockBooksService,
   ],
 })
 export class BookModule {}

@@ -44,6 +44,21 @@ export class BookMockRepo implements BookRepo {
     return Promise.resolve(this.books.slice(start, start + data.limit))
   }
 
+  findByCategory(category: string): Promise<Book[]> {
+    const needle = category.toLowerCase()
+    return Promise.resolve(
+      this.books.filter((book) => book.category.toLowerCase().includes(needle)),
+    )
+  }
+
+  findLowStock(threshold: number): Promise<Book[]> {
+    return Promise.resolve(
+      this.books
+        .filter((book) => book.stockQuantity <= threshold)
+        .sort((a, b) => a.stockQuantity - b.stockQuantity),
+    )
+  }
+
   count(): Promise<number> {
     return Promise.resolve(this.books.length)
   }

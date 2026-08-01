@@ -8,6 +8,8 @@ export interface BookRepo {
   findByIsbn(isbn: string): Promise<Optional<Book>>
   findById(id: number): Promise<Optional<Book>>
   findMany(data: { page: number; limit: number }): Promise<Book[]>
+  findByCategory(category: string): Promise<Book[]>
+  findLowStock(threshold: number): Promise<Book[]>
   count(): Promise<number>
 }
 

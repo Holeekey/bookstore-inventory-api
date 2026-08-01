@@ -18,6 +18,10 @@ import { UpdateBookService } from '../services/update/update-book.service'
 import { UpdateBookBody } from '../services/update/types/input'
 import { DeleteBookService } from '../services/delete/delete-book.service'
 import { DeleteBookInput } from '../services/delete/types/input'
+import { SearchBooksByCategoryService } from '../services/search-by-category/search-books-by-category.service'
+import { SearchBooksByCategoryInput } from '../services/search-by-category/types/input'
+import { FindLowStockBooksService } from '../services/low-stock/find-low-stock-books.service'
+import { FindLowStockBooksInput } from '../services/low-stock/types/input'
 
 @Controller('books')
 export class BookController {
@@ -27,6 +31,8 @@ export class BookController {
     private findManyBooks: FindManyBooksService,
     private updateBook: UpdateBookService,
     private deleteBook: DeleteBookService,
+    private searchBooksByCategory: SearchBooksByCategoryService,
+    private findLowStockBooks: FindLowStockBooksService,
   ) {}
 
   @Post()
@@ -37,6 +43,18 @@ export class BookController {
   @Get()
   async findMany(@Query() query: FindManyBooksInput) {
     return await this.findManyBooks.execute(query)
+  }
+
+  // `search` and `low-stock` must be declared before the `:id` route, or Nest
+  // would match them as the id param instead.
+  @Get('search')
+  async search(@Query() query: SearchBooksByCategoryInput) {
+    return await this.searchBooksByCategory.execute(query)
+  }
+
+  @Get('low-stock')
+  async lowStock(@Query() query: FindLowStockBooksInput) {
+    return await this.findLowStockBooks.execute(query)
   }
 
   @Get(':id')

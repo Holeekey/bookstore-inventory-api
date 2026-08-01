@@ -58,6 +58,22 @@ export class BookPostgresRepo implements BookRepo {
     return rows.map((row) => this.toEntity(row))
   }
 
+  async findByCategory(category: string): Promise<Book[]> {
+    const rows = await this.prisma.book.findMany({
+      where: { category: { contains: category, mode: 'insensitive' } },
+      orderBy: { id: 'asc' },
+    })
+    return rows.map((row) => this.toEntity(row))
+  }
+
+  async findLowStock(threshold: number): Promise<Book[]> {
+    const rows = await this.prisma.book.findMany({
+      where: { stockQuantity: { lte: threshold } },
+      orderBy: { stockQuantity: 'asc' },
+    })
+    return rows.map((row) => this.toEntity(row))
+  }
+
   async count(): Promise<number> {
     return await this.prisma.book.count()
   }
