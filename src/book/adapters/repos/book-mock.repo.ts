@@ -33,4 +33,8 @@ export class BookMockRepo implements BookRepo {
     const start = (data.page - 1) * data.limit
     return Promise.resolve(this.books.slice(start, start + data.limit))
   }
+
+  count(): Promise<number> {
+    return Promise.resolve(this.books.length)
+  }
 }

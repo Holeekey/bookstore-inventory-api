@@ -7,6 +7,7 @@ export interface BookRepo {
   findByIsbn(isbn: string): Promise<Optional<Book>>
   findById(id: number): Promise<Optional<Book>>
   findMany(data: { page: number; limit: number }): Promise<Book[]>
+  count(): Promise<number>
 }
 
 export const BOOK_REPO = Symbol('BookRepo')

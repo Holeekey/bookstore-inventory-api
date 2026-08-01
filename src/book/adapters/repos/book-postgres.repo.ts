@@ -49,6 +49,10 @@ export class BookPostgresRepo implements BookRepo {
     return rows.map((row) => this.toEntity(row))
   }
 
+  async count(): Promise<number> {
+    return await this.prisma.book.count()
+  }
+
   private handleWriteError(error: unknown): Result<Book> {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       // `isbn` is the only unique constraint on the table, so any unique

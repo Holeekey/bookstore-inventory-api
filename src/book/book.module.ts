@@ -4,6 +4,7 @@ import { CreateBookService } from './services/create/create-book.service'
 import { BOOK_REPO } from './ports/book.repo'
 import { BookPostgresRepo } from './adapters/repos/book-postgres.repo'
 import { FindOneBookService } from './services/find-one/find-one-book.service'
+import { FindManyBooksService } from './services/find-many/find-many-books.service'
 
 @Module({
   controllers: [BookController],
@@ -11,6 +12,7 @@ import { FindOneBookService } from './services/find-one/find-one-book.service'
     { provide: BOOK_REPO, useClass: BookPostgresRepo },
     CreateBookService,
     FindOneBookService,
+    FindManyBooksService,
   ],
 })
 export class BookModule {}

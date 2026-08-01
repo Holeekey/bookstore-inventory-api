@@ -95,7 +95,18 @@ and injected with `@Inject(BOOK_REPO) private bookRepo: BookRepo`. **The type mu
 - Input DTOs are **classes** with `class-validator` decorators (not interfaces): the global `ValidationPipe` in [src/main.ts](src/main.ts) uses `whitelist` and `transform` with `enableImplicitConversion`, which is why route params (`@Param() params: FindOneBookInput`) are coerced to numbers automatically.
 - Controllers hold no logic and do no error mapping: they `await this.service.execute(...)` and return the `Result` as-is. The global interceptor unwraps it and the global filter maps the failure — a controller should never inspect `isException()` nor set a status by hand.
 
+## Skills
+
+Agent skills live in `.claude/skills/`. Load the matching one before starting that kind of work.
+
+| Skill | What it covers | File |
+|-------|----------------|------|
+| `create-endpoint` | Adding an endpoint / use case: port, DTOs, service, exception, module, controller, Postman, tests | [.claude/skills/create-endpoint/SKILL.md](.claude/skills/create-endpoint/SKILL.md) |
+| `skill-creator` | Creating a new skill | [.claude/skills/skill-creator/SKILL.md](.claude/skills/skill-creator/SKILL.md) |
+
 ## Adding a use case
+
+Summary of the `create-endpoint` skill — see it for templates and the full checklist.
 
 1. Extend the port (`ports/book.repo.ts`) and its adapters (`BookPostgresRepo`, `BookMockRepo`) if needed. If it needs new columns, edit `prisma/schema.prisma` and run `npm run prisma:migrate`.
 2. Create `services/<use-case>/types/input.ts` and `output.ts`.
