@@ -5,6 +5,7 @@ export class IsbnExistsException extends Exception {
   constructor() {
     super(
       BookExceptionCode.ISBN_EXISTS,
+      400,
       'A book with that ISBN code already exists',
     )
   }
